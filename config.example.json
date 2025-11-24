@@ -1,0 +1,22 @@
+{
+  "knowledge_base": {
+    "path": "data/manual.json"
+  },
+  "llm": {
+    "type": "openai",
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+    "max_tokens": 2000,
+    "api_key": null,
+    "base_url": null
+  },
+  "output": {
+    "format": "text",
+    "include_context": true
+  },
+  "logging": {
+    "level": "INFO",
+    "file": null
+  }
+}
+

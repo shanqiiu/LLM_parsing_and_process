@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 配置文件（包含敏感信息）
+config.json
+*.key
+*.secret
+
+# 输出文件
+output/
+results/
+*.log
+
+# 数据文件（大文件）
+data/*.json
+data/*.txt
+!data/*.example.*
+
+# 临时文件
+*.tmp
+*.bak
+.DS_Store
+

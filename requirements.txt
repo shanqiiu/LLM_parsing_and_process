@@ -1,0 +1,10 @@
+# 操作序列拆分工具依赖
+
+# LLM客户端
+openai>=1.0.0
+anthropic>=0.18.0
+requests>=2.31.0
+
+# 工具库
+pathlib2>=2.3.7; python_version < '3.4'
+
