@@ -3,7 +3,9 @@
 """
 
 import json
+from datetime import datetime
 from typing import List, Dict, Any, Optional
+from pathlib import Path
 from .knowledge_base import KnowledgeBase
 from .llm_client import LLMClient, create_llm_client
 
@@ -21,7 +23,7 @@ class OperationSequenceSplitter:
         初始化拆分器
         
         Args:
-            knowledge_base_path: 操作手册JSON文件路径
+            knowledge_base_path: 操作手册JSON文件目录路径
             llm_client: LLM客户端实例，如果为None则根据llm_config创建
             llm_config: LLM配置字典，格式: {"type": "openai", "model": "gpt-3.5-turbo", ...}
         """
@@ -32,62 +34,71 @@ class OperationSequenceSplitter:
         if llm_client is not None:
             self.llm_client = llm_client
         elif llm_config:
-            self.llm_client = create_llm_client(**llm_config)
+            llm_config_copy = llm_config.copy()
+            client_type = llm_config_copy.pop("type", "openai")
+            self.llm_client = create_llm_client(client_type, **llm_config_copy)
         else:
-            # 默认使用mock客户端
             self.llm_client = create_llm_client("mock")
             print("⚠ 警告: 未指定LLM配置，使用Mock客户端（仅用于测试）")
     
-    def split(
+    def split_to_new_format(
         self,
         operation_sequence: str,
-        output_format: str = "text",
+        output_filename: str = None,
         include_context: bool = True
-    ) -> str:
+    ) -> Dict[str, Any]:
         """
-        将粗粒度操作序列拆分为细粒度子步骤
+        将操作序列拆分为新格式的JSON
         
         Args:
             operation_sequence: 粗粒度操作序列文本
-            output_format: 输出格式 ("text" 或 "json")
+            output_filename: 输出文件名（如"测试数据1.json"），如果为None则自动生成
             include_context: 是否在提示中包含知识库上下文
             
         Returns:
-            拆分后的子步骤序列（文本或JSON格式）
+            新格式的JSON字典
         """
         # 构建提示词
         prompt = self._build_prompt(operation_sequence, include_context)
         
         # 调用LLM生成拆分结果
-        result = self.llm_client.generate(prompt)
+        text_result = self.llm_client.generate(prompt)
         
-        # 格式化输出
-        if output_format == "json":
-            return self._parse_to_json(result)
-        else:
-            return result
+        # 解析为新格式JSON
+        return self._parse_to_new_format(text_result, operation_sequence, output_filename)
     
-    def split_batch(
+    def split_to_new_format_file(
         self,
-        operation_sequences: List[str],
-        output_format: str = "text"
-    ) -> List[str]:
+        operation_sequence: str,
+        output_path: str,
+        include_context: bool = True
+    ) -> str:
         """
-        批量拆分操作序列
+        将操作序列拆分并保存为新格式的JSON文件
         
         Args:
-            operation_sequences: 操作序列列表
-            output_format: 输出格式
+            operation_sequence: 粗粒度操作序列文本
+            output_path: 输出文件路径
+            include_context: 是否在提示中包含知识库上下文
             
         Returns:
-            拆分结果列表
+            输出文件路径
         """
-        results = []
-        for i, seq in enumerate(operation_sequences, 1):
-            print(f"处理第 {i}/{len(operation_sequences)} 个操作序列...")
-            result = self.split(seq, output_format)
-            results.append(result)
-        return results
+        # 从输出路径提取文件名
+        output_path_obj = Path(output_path)
+        output_filename = output_path_obj.name
+        
+        # 生成新格式JSON
+        result_dict = self.split_to_new_format(operation_sequence, output_filename, include_context)
+        
+        # 确保输出目录存在
+        output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+        
+        # 保存文件
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(result_dict, f, ensure_ascii=False, indent=2)
+        
+        return str(output_path)
     
     def _build_prompt(self, operation_sequence: str, include_context: bool = True) -> str:
         """
@@ -102,7 +113,6 @@ class OperationSequenceSplitter:
         """
         prompt_parts = []
         
-        # 添加任务描述
         prompt_parts.append("""你是一个专业的操作步骤拆分助手。你的任务是根据用户操作手册，将粗粒度的操作序列拆分为详细的、agent可以直接执行的子步骤序列。
 
 要求：
@@ -140,46 +150,52 @@ class OperationSequenceSplitter:
         
         return "\n".join(prompt_parts)
     
-    def _parse_to_json(self, text_result: str) -> str:
+    def _parse_to_new_format(
+        self, 
+        text_result: str, 
+        operation_sequence: str = "", 
+        output_filename: str = None
+    ) -> Dict[str, Any]:
         """
-        将文本结果解析为JSON格式
+        将文本结果解析为新格式的JSON
         
         Args:
             text_result: LLM返回的文本结果
+            operation_sequence: 原始操作序列
+            output_filename: 输出文件名（如"测试数据1.json"）
             
         Returns:
-            JSON格式字符串
+            新格式JSON字典
         """
-        steps = []
+        # 解析步骤
+        substeps = []
         lines = text_result.split("\n")
         
-        current_step = None
         current_description = []
+        step_counter = 1
         
         for line in lines:
             line = line.strip()
             if not line:
                 continue
             
-            # 检测步骤开始（支持多种格式）
-            if line.startswith("步骤") or line.startswith("Step") or line[0].isdigit():
+            # 检测步骤开始
+            if line.startswith("步骤") or line.startswith("Step") or (line and line[0].isdigit()):
                 # 保存上一个步骤
-                if current_step is not None:
-                    steps.append({
-                        "step_number": current_step,
-                        "description": " ".join(current_description).strip()
+                if current_description:
+                    substeps.append({
+                        "subtype": "action",
+                        "description": " ".join(current_description).strip(),
+                        "id": f"step_{step_counter:03d}",
+                        "type": "operation"
                     })
+                    step_counter += 1
                 
                 # 解析新步骤
                 parts = line.split(":", 1)
                 if len(parts) == 2:
-                    step_num_str = parts[0].strip()
-                    # 提取步骤编号
-                    step_num = "".join(filter(str.isdigit, step_num_str))
-                    current_step = int(step_num) if step_num else len(steps) + 1
                     current_description = [parts[1].strip()]
                 else:
-                    current_step = len(steps) + 1
                     current_description = [line]
             else:
                 # 继续当前步骤的描述
@@ -187,44 +203,87 @@ class OperationSequenceSplitter:
                     current_description.append(line)
                 else:
                     # 如果没有步骤编号，创建新步骤
-                    if not steps:
-                        current_step = 1
+                    if not substeps:
                         current_description = [line]
         
         # 保存最后一个步骤
-        if current_step is not None:
-            steps.append({
-                "step_number": current_step,
-                "description": " ".join(current_description).strip()
+        if current_description:
+            substeps.append({
+                "subtype": "action",
+                "description": " ".join(current_description).strip(),
+                "id": f"step_{step_counter:03d}",
+                "type": "operation"
             })
         
-        # 如果没有解析到步骤，返回原始文本
-        if not steps:
-            steps = [{"step_number": 1, "description": text_result}]
+        # 如果没有解析到步骤，创建默认步骤
+        if not substeps:
+            substeps.append({
+                "subtype": "action",
+                "description": text_result.strip() or operation_sequence,
+                "id": "step_001",
+                "type": "operation"
+            })
         
-        result = {
-            "original_sequence": "",
-            "sub_steps": steps,
-            "total_steps": len(steps)
+        # 生成当前时间戳
+        current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        
+        # 确定文件名
+        if output_filename is None:
+            output_filename = f"output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        elif not output_filename.endswith('.json'):
+            output_filename += '.json'
+        
+        # 构建新格式JSON
+        return {
+            "chunk_id": f"chunk_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "def": {
+                "path": {
+                    "textual_path": "",
+                    "path_uri": ""
+                },
+                "substep": substeps,
+                "feature": "",
+                "product_morphology": "",
+                "context": operation_sequence,
+                "product_info": {
+                    "product_line_name": "",
+                    "product_id": "",
+                    "product_name": ""
+                },
+                "current_main_step": {
+                    "subtype": "main",
+                    "description": operation_sequence or "操作序列",
+                    "id": "main_step_001",
+                    "type": "main_operation"
+                },
+                "source": output_filename,
+                "id": f"operation_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "corpus_source": "",
+                "operation": operation_sequence or "操作序列",
+                "scene": ""
+            },
+            "filename": output_filename,
+            "from": "splitter",
+            "item_info_id": "",
+            "kba_id": "",
+            "meta_data": {
+                "org_embedding": [],
+                "data_filter_map": [],
+                "source": output_filename,
+                "mtime": current_time
+            },
+            "text": [],
+            "uri": f"file:///{output_filename}"
         }
-        
-        return json.dumps(result, ensure_ascii=False, indent=2)
     
     def get_operation_info(self, operation_name: str) -> Optional[Dict[str, Any]]:
         """
         获取操作手册中特定操作的详细信息
         
         Args:
-            operation_name: 操作名称
+            operation_name: 操作名称或操作ID
             
         Returns:
             操作信息字典，如果不存在则返回None
         """
-        steps = self.knowledge_base.get_operation_steps(operation_name)
-        if steps:
-            return {
-                "name": operation_name,
-                "steps": steps
-            }
-        return None
-
+        return self.knowledge_base.get_operation_info(operation_name)

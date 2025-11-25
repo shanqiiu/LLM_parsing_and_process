@@ -1,6 +1,6 @@
 {
   "knowledge_base": {
-    "path": "data/manual.json"
+    "path": "data/knowledge_base_example"
   },
   "llm": {
     "type": "openai",

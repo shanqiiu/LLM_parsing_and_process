@@ -1,0 +1,41 @@
+{
+  "operation_id": "operation_002",
+  "operation_name": "查看用户信息",
+  "description": "查看当前登录用户的详细信息",
+  "category": "用户管理",
+  "steps": [
+    {
+      "step_number": 1,
+      "action": "导航到用户信息页面",
+      "description": "点击用户菜单或直接访问用户信息页面",
+      "parameters": {
+        "menu_path": ["用户", "个人信息"]
+      }
+    },
+    {
+      "step_number": 2,
+      "action": "点击用户头像或用户名",
+      "description": "在页面中找到用户头像或用户名并点击",
+      "parameters": {
+        "element_type": "avatar_or_username"
+      }
+    },
+    {
+      "step_number": 3,
+      "action": "查看用户详细信息",
+      "description": "在用户信息页面查看用户的详细信息",
+      "parameters": {
+        "info_fields": ["姓名", "邮箱", "电话", "角色"]
+      }
+    },
+    {
+      "step_number": 4,
+      "action": "验证信息显示正确",
+      "description": "确认所有用户信息字段都正确显示",
+      "parameters": {}
+    }
+  ],
+  "prerequisites": ["登录系统"],
+  "expected_result": "成功查看用户详细信息页面"
+}
+

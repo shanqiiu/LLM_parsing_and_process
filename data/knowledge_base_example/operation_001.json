@@ -1,0 +1,54 @@
+{
+  "operation_id": "operation_001",
+  "operation_name": "登录系统",
+  "description": "用户登录到系统的标准流程",
+  "category": "用户认证",
+  "steps": [
+    {
+      "step_number": 1,
+      "action": "打开登录页面",
+      "description": "在浏览器中访问系统登录页面",
+      "parameters": {
+        "url": "https://example.com/login"
+      }
+    },
+    {
+      "step_number": 2,
+      "action": "输入用户名",
+      "description": "在用户名输入框中输入用户账号",
+      "parameters": {
+        "field": "username",
+        "required": true
+      }
+    },
+    {
+      "step_number": 3,
+      "action": "输入密码",
+      "description": "在密码输入框中输入用户密码",
+      "parameters": {
+        "field": "password",
+        "required": true,
+        "type": "password"
+      }
+    },
+    {
+      "step_number": 4,
+      "action": "点击登录按钮",
+      "description": "点击登录按钮提交登录信息",
+      "parameters": {
+        "button_id": "login-btn"
+      }
+    },
+    {
+      "step_number": 5,
+      "action": "验证登录成功",
+      "description": "检查页面是否跳转到主页面，确认登录成功",
+      "parameters": {
+        "expected_url": "https://example.com/dashboard"
+      }
+    }
+  ],
+  "prerequisites": [],
+  "expected_result": "成功登录系统，进入主页面"
+}
+

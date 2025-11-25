@@ -49,14 +49,14 @@ def main():
     
     parser.add_argument(
         "-f", "--format",
-        choices=["text", "json"],
-        default="text",
-        help="输出格式（默认: text）"
+        choices=["new_json"],
+        default="new_json",
+        help="输出格式（默认: new_json，新格式JSON）"
     )
     
     parser.add_argument(
         "-k", "--knowledge-base",
-        help="操作手册JSON文件路径（覆盖配置文件中的设置）"
+        help="操作手册JSON文件路径或包含JSON文件的目录路径（覆盖配置文件中的设置）"
     )
     
     parser.add_argument(
@@ -88,10 +88,24 @@ def main():
     
     # 确定知识库路径
     kb_path = args.knowledge_base or config.get("knowledge_base.path")
-    if not kb_path or not Path(kb_path).exists():
-        print(f"❌ 错误: 知识库文件不存在: {kb_path}")
-        print("请使用 -k 参数指定有效的操作手册JSON文件路径")
+    if not kb_path:
+        print(f"❌ 错误: 未指定知识库路径")
+        print("请使用 -k 参数指定操作手册JSON文件路径或包含JSON文件的目录路径")
         sys.exit(1)
+    
+    kb_path_obj = Path(kb_path)
+    if not kb_path_obj.exists():
+        print(f"❌ 错误: 知识库路径不存在: {kb_path}")
+        print("请使用 -k 参数指定有效的操作手册JSON文件路径或目录路径")
+        sys.exit(1)
+    
+    # 检查必须是目录
+    if not kb_path_obj.is_dir():
+        print(f"❌ 错误: 知识库路径必须是目录: {kb_path}")
+        sys.exit(1)
+    
+    json_count = len(list(kb_path_obj.glob("*.json")))
+    print(f"ℹ 使用知识库目录: {kb_path} (包含 {json_count} 个JSON文件)")
     
     # 构建LLM配置
     llm_config = config.get_llm_config()
@@ -125,32 +139,48 @@ def main():
     # 执行拆分
     try:
         if len(operation_sequences) == 1:
-            result = splitter.split(
-                operation_sequences[0],
-                output_format=args.format,
-                include_context=config.get("output.include_context", True)
-            )
-            results = [result]
+            if args.output:
+                output_path = Path(args.output)
+                splitter.split_to_new_format_file(
+                    operation_sequences[0],
+                    str(output_path),
+                    include_context=config.get("output.include_context", True)
+                )
+                print(f"✓ 新格式JSON已保存到: {output_path}")
+            else:
+                # 输出到控制台
+                result_dict = splitter.split_to_new_format(
+                    operation_sequences[0],
+                    include_context=config.get("output.include_context", True)
+                )
+                import json
+                print("\n" + "="*80)
+                print("拆分结果（新格式JSON）:")
+                print("="*80)
+                print(json.dumps(result_dict, ensure_ascii=False, indent=2))
         else:
-            results = splitter.split_batch(operation_sequences, output_format=args.format)
+            # 批量处理
+            if not args.output:
+                print("❌ 批量处理必须指定输出目录（使用 -o 参数）")
+                sys.exit(1)
+            
+            output_dir = Path(args.output)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            for i, seq in enumerate(operation_sequences, 1):
+                output_filename = f"output_{i:03d}.json"
+                output_path = output_dir / output_filename
+                splitter.split_to_new_format_file(
+                    seq,
+                    str(output_path),
+                    include_context=config.get("output.include_context", True)
+                )
+                print(f"✓ [{i}/{len(operation_sequences)}] 已保存: {output_path}")
     except Exception as e:
         print(f"❌ 拆分失败: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
-    
-    # 输出结果
-    output_text = "\n\n" + "="*80 + "\n\n".join(results) if len(results) > 1 else results[0]
-    
-    if args.output:
-        output_path = Path(args.output)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(output_text)
-        print(f"✓ 结果已保存到: {output_path}")
-    else:
-        print("\n" + "="*80)
-        print("拆分结果:")
-        print("="*80)
-        print(output_text)
 
 
 if __name__ == "__main__":

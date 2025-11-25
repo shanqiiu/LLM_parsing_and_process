@@ -1,0 +1,80 @@
+{
+  "operation_id": "operation_003",
+  "operation_name": "创建新任务",
+  "description": "在系统中创建新的任务项",
+  "category": "任务管理",
+  "steps": [
+    {
+      "step_number": 1,
+      "action": "进入任务管理页面",
+      "description": "导航到任务管理模块",
+      "parameters": {
+        "menu_path": ["任务", "任务管理"]
+      }
+    },
+    {
+      "step_number": 2,
+      "action": "点击新建任务按钮",
+      "description": "在任务列表页面点击新建任务按钮",
+      "parameters": {
+        "button_text": "新建任务"
+      }
+    },
+    {
+      "step_number": 3,
+      "action": "填写任务标题",
+      "description": "在任务标题输入框中输入任务标题",
+      "parameters": {
+        "field": "title",
+        "required": true,
+        "max_length": 100
+      }
+    },
+    {
+      "step_number": 4,
+      "action": "填写任务描述",
+      "description": "在任务描述文本框中输入任务详细描述",
+      "parameters": {
+        "field": "description",
+        "required": false
+      }
+    },
+    {
+      "step_number": 5,
+      "action": "选择任务优先级",
+      "description": "从优先级下拉菜单中选择任务优先级",
+      "parameters": {
+        "field": "priority",
+        "options": ["低", "中", "高", "紧急"],
+        "default": "中"
+      }
+    },
+    {
+      "step_number": 6,
+      "action": "设置截止日期",
+      "description": "选择任务的截止日期",
+      "parameters": {
+        "field": "deadline",
+        "required": false,
+        "date_format": "YYYY-MM-DD"
+      }
+    },
+    {
+      "step_number": 7,
+      "action": "点击保存按钮",
+      "description": "点击保存按钮提交任务信息",
+      "parameters": {
+        "button_text": "保存"
+      }
+    },
+    {
+      "step_number": 8,
+      "action": "验证任务创建成功",
+      "description": "检查任务列表中是否出现新创建的任务",
+      "parameters": {}
+    }
+  ],
+  "prerequisites": ["登录系统"],
+  "expected_result": "成功创建新任务并在任务列表中显示"
+}
+

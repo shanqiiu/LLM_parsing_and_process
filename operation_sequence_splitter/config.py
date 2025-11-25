@@ -30,7 +30,7 @@ class Config:
         """加载默认配置"""
         self.config = {
             "knowledge_base": {
-                "path": "data/manual.json"
+                "path": "data/knowledge_base_example"
             },
             "llm": {
                 "type": "openai",  # openai, anthropic, local, mock

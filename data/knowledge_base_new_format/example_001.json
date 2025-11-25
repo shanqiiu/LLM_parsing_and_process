@@ -1,0 +1,73 @@
+{
+	"chunk_id": "chunk_001",
+	"def": {
+		"path": {
+			"textual_path": "用户认证/登录系统",
+			"path_uri": "/user/auth/login"
+		},
+		"substep": [
+			{
+				"subtype": "action",
+				"description": "打开登录页面",
+				"id": "step_001",
+				"type": "navigation"
+			},
+			{
+				"subtype": "input",
+				"description": "输入用户名",
+				"id": "step_002",
+				"type": "form_fill"
+			},
+			{
+				"subtype": "input",
+				"description": "输入密码",
+				"id": "step_003",
+				"type": "form_fill"
+			},
+			{
+				"subtype": "action",
+				"description": "点击登录按钮",
+				"id": "step_004",
+				"type": "button_click"
+			},
+			{
+				"subtype": "verification",
+				"description": "验证登录成功",
+				"id": "step_005",
+				"type": "status_check"
+			}
+		],
+		"feature": "用户登录功能",
+		"product_morphology": "Web应用",
+		"context": "用户需要登录系统以访问个人账户",
+		"product_info": {
+			"product_line_name": "用户管理系统",
+			"product_id": "product_001",
+			"product_name": "用户认证系统"
+		},
+		"current_main_step": {
+			"subtype": "main",
+			"description": "登录系统",
+			"id": "main_step_001",
+			"type": "authentication"
+		},
+		"source": "example_001.json",
+		"id": "operation_001",
+		"corpus_source": "用户手册",
+		"operation": "登录系统",
+		"scene": "用户登录场景"
+	},
+	"filename": "example_001.json",
+	"from": "manual",
+	"item_info_id": "item_001",
+	"kba_id": "kba_001",
+	"meta_data": {
+		"org_embedding": [],
+		"data_filter_map": [],
+		"source": "example_001.json",
+		"mtime": "2024-01-01T00:00:00"
+	},
+	"text": [],
+	"uri": "file:///example_001.json"
+}
+

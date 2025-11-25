@@ -50,46 +50,71 @@ export ANTHROPIC_API_KEY="your-api-key"
 
 ## 快速开始
 
-### 1. 准备操作手册JSON文件
+### 1. 准备操作手册知识库
 
-操作手册JSON文件应包含操作步骤信息，支持多种格式：
+知识库支持两种方式：
 
-**格式1: 嵌套结构**
+#### 方式1: 目录模式（推荐）
+
+在指定目录下放置多个JSON文件，每个文件代表一个操作序列。JSON文件格式：
+
 ```json
 {
-  "operations": {
-    "操作名称": {
-      "description": "操作描述",
-      "steps": ["步骤1", "步骤2", ...]
+  "operation_id": "operation_001",
+  "operation_name": "登录系统",
+  "description": "用户登录到系统的标准流程",
+  "category": "用户认证",
+  "steps": [
+    {
+      "step_number": 1,
+      "action": "打开登录页面",
+      "description": "在浏览器中访问系统登录页面",
+      "parameters": {
+        "url": "https://example.com/login"
+      }
+    },
+    {
+      "step_number": 2,
+      "action": "输入用户名",
+      "description": "在用户名输入框中输入用户账号",
+      "parameters": {
+        "field": "username",
+        "required": true
+      }
     }
-  }
+  ],
+  "prerequisites": [],
+  "expected_result": "成功登录系统，进入主页面"
 }
 ```
 
-**格式2: 扁平结构**
-```json
-{
-  "操作名称": {
-    "steps": ["步骤1", "步骤2", ...]
-  }
-}
-```
+**字段说明：**
+- `operation_id`: 操作唯一标识符（可选，默认使用文件名）
+- `operation_name`: 操作名称
+- `description`: 操作描述
+- `category`: 操作类别（可选）
+- `steps`: 操作步骤列表
+  - `step_number`: 步骤编号
+  - `action`: 操作动作
+  - `description`: 步骤描述
+  - `parameters`: 操作参数（可选）
+- `prerequisites`: 前置条件列表（可选）
+- `expected_result`: 预期结果（可选）
 
-**格式3: 列表结构**
-```json
-[
-  {
-    "name": "操作名称",
-    "steps": ["步骤1", "步骤2", ...]
-  }
-]
-```
+参考 `data/knowledge_base_example/` 目录查看完整示例。
 
-参考 `data/manual.example.json` 查看完整示例。
+#### 方式2: 单个JSON文件（兼容旧格式）
+
+支持旧的单个JSON文件格式，参考 `data/manual.example.json`。
 
 ### 2. 使用命令行工具
 
-**基本用法：**
+**基本用法（目录模式）：**
+```bash
+python main.py -i "登录系统并查看用户信息" -k data/knowledge_base_example
+```
+
+**基本用法（单个文件，兼容旧格式）：**
 ```bash
 python main.py -i "登录系统并查看用户信息" -k data/manual.example.json
 ```
